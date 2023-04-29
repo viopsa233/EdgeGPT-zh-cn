@@ -5,3 +5,5 @@ prompt_toolkit
 requests
 rich
 websockets
+PySide6
+qasync
