@@ -57,6 +57,13 @@ class SydneyWindow(QWidget):
         self.send_button.setEnabled(False)
         self.load_button.setEnabled(False)
         self.chat_history.setReadOnly(True)
+        self.chat_history.moveCursor(QTextCursor.MoveOperation.End)
+        text = self.chat_history.toPlainText()
+        if not text.endswith("\n\n"):
+            if text.endswith("\n"):
+                self.chat_history.insertPlainText("\n")
+            else:
+                self.chat_history.insertPlainText("\n\n")
         self.chatbot.previous_messages = self.chat_history.toPlainText()
 
         async def stream_output():
