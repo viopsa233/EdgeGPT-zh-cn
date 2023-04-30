@@ -1,32 +1,68 @@
 import asyncio
 
-from PySide6.QtGui import QTextCursor
+from PySide6.QtGui import QTextCursor, Qt
 from PySide6.QtWidgets import (
     QApplication,
     QGridLayout,
     QLabel,
     QPushButton,
     QTextEdit,
-    QWidget, QPlainTextEdit, QErrorMessage, QHBoxLayout, QFileDialog,
+    QWidget, QPlainTextEdit, QErrorMessage, QHBoxLayout, QFileDialog, QToolButton, QMenu, QSizePolicy,
 )
 from qasync import QEventLoop, asyncSlot
 
 from EdgeGPT import Chatbot
 
 
+class UserInput(QPlainTextEdit):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.parent = parent
+
+    def keyPressEvent(self, event):
+        key = event.key()
+        modifiers = event.modifiers()
+        if key == Qt.Key.Key_Enter or key == Qt.Key.Key_Return:
+            match self.parent.enter_mode:
+                case "Enter":
+                    if modifiers != Qt.KeyboardModifier.ControlModifier:
+                        self.parent.send_message()
+                    else:
+                        super().keyPressEvent(event)
+                case "Ctrl+Enter":
+                    if modifiers == Qt.KeyboardModifier.ControlModifier:
+                        self.parent.send_message()
+                    else:
+                        super().keyPressEvent(event)
+        else:
+            super().keyPressEvent(event)
+
+
 class SydneyWindow(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.enter_mode = "Enter"
         self.chatbot = Chatbot(cookie_path='./cookies.json')
         self.chat_history = QTextEdit()
-        self.user_input = QPlainTextEdit()
+        self.user_input = UserInput(self)
+        self.user_input.setSizePolicy(QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding))
         self.load_button = QPushButton("Load")
         self.load_button.clicked.connect(self.load_file)
         self.save_button = QPushButton("Save")
         self.save_button.clicked.connect(self.save_file)
-        self.load_button.setMaximumWidth(40)
-        self.save_button.setMaximumWidth(40)
-        self.send_button = QPushButton("Send")
+        self.load_button.setFixedWidth(40)
+        self.save_button.setFixedWidth(40)
+        self.send_button = QToolButton()
+        self.send_button.setText("Send")
+        self.send_button.setSizePolicy(QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum))
+        self.send_button.setPopupMode(QToolButton.ToolButtonPopupMode.MenuButtonPopup)
+        menu = QMenu(self)
+        self.enter_action = menu.addAction("Press Enter to send", lambda: self.set_enter_mode("Enter"))
+        self.enter_action.setCheckable(True)
+        self.enter_action.setChecked(True)
+        self.ctrl_enter_action = menu.addAction("Press Ctrl+Enter to send", lambda: self.set_enter_mode("Ctrl+Enter"))
+        self.ctrl_enter_action.setCheckable(True)
+        self.send_button.setMenu(menu)
 
         layout = QGridLayout()
         layout.addWidget(QLabel("Chat History:"), 0, 0)
@@ -52,11 +88,9 @@ class SydneyWindow(QWidget):
 
     @asyncSlot()
     async def send_message(self):
+        self.set_responding(True)
         user_input = self.user_input.toPlainText()
         self.user_input.clear()
-        self.send_button.setEnabled(False)
-        self.load_button.setEnabled(False)
-        self.chat_history.setReadOnly(True)
         self.chat_history.moveCursor(QTextCursor.MoveOperation.End)
         text = self.chat_history.toPlainText()
         if not text.endswith("\n\n"):
@@ -80,10 +114,8 @@ class SydneyWindow(QWidget):
             await stream_output()
         except Exception as e:
             QErrorMessage(self).showMessage(str(e))
-        self.send_button.setEnabled(True)
-        self.load_button.setEnabled(True)
         self.reload_context()
-        self.chat_history.setReadOnly(False)
+        self.set_responding(False)
 
     def load_file(self):
         file_dialog = QFileDialog(self)
@@ -104,6 +136,27 @@ class SydneyWindow(QWidget):
             file_name = file_dialog.selectedFiles()[0]
             with open(file_name, "w", encoding='utf-8') as f:
                 f.write(self.chat_history.toPlainText())
+
+    def set_enter_mode(self, key):
+        match key:
+            case "Enter":
+                self.enter_mode = "Enter"
+                self.enter_action.setChecked(True)
+                self.ctrl_enter_action.setChecked(False)
+            case "Ctrl+Enter":
+                self.enter_mode = "Ctrl+Enter"
+                self.enter_action.setChecked(False)
+                self.ctrl_enter_action.setChecked(True)
+
+    def set_responding(self, responding):
+        if responding:
+            self.send_button.setEnabled(False)
+            self.load_button.setEnabled(False)
+            self.chat_history.setReadOnly(True)
+        else:
+            self.send_button.setEnabled(True)
+            self.load_button.setEnabled(True)
+            self.chat_history.setReadOnly(False)
 
 
 if __name__ == "__main__":
