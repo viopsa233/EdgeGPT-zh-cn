@@ -25,7 +25,7 @@ class UserInput(QPlainTextEdit):
         if key == Qt.Key.Key_Enter or key == Qt.Key.Key_Return:
             match self.parent.enter_mode:
                 case "Enter":
-                    if modifiers != Qt.KeyboardModifier.ControlModifier:
+                    if modifiers == Qt.KeyboardModifier.NoModifier:
                         self.parent.send_message()
                     else:
                         super().keyPressEvent(event)
@@ -41,6 +41,7 @@ class UserInput(QPlainTextEdit):
 class SydneyWindow(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.responding = False
         self.enter_mode = "Enter"
         self.chatbot = Chatbot(cookie_path='./cookies.json')
         self.chat_history = QTextEdit()
@@ -88,6 +89,8 @@ class SydneyWindow(QWidget):
 
     @asyncSlot()
     async def send_message(self):
+        if self.responding:
+            return
         self.set_responding(True)
         user_input = self.user_input.toPlainText()
         self.user_input.clear()
@@ -149,6 +152,7 @@ class SydneyWindow(QWidget):
                 self.ctrl_enter_action.setChecked(True)
 
     def set_responding(self, responding):
+        self.responding = responding
         if responding:
             self.send_button.setEnabled(False)
             self.load_button.setEnabled(False)
