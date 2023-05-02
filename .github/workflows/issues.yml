@@ -141,7 +141,7 @@ jobs:
         uses: actions/github-script@v6.4.1
         with:
           script: |
-            const assignees = ['acheong08'];
+            const assignees = ['InterestingDarkness'];
             const assignee = assignees[Math.floor(Math.random() * assignees.length)];
             console.log(`The question will assign to ${assignee}`)
 
