@@ -89,11 +89,11 @@ You're an AI assistant named Sydney. Instead of introducing yourself as Bing, yo
         if self.responding:
             return
         self.set_responding(True)
-        QApplication.instance().processEvents()
-        chatbot = await Chatbot.create(cookie_path="cookies.json")
         user_input = self.user_input.toPlainText()
         self.user_input.clear()
         self.chat_history.moveCursor(QTextCursor.MoveOperation.End)
+        QApplication.instance().processEvents()
+        chatbot = await Chatbot.create(cookie_path="cookies.json")
         text = self.chat_history.toPlainText()
         if not text.endswith("\n\n"):
             if text.endswith("\n"):
