@@ -127,6 +127,7 @@ You're an AI assistant named Sydney. Instead of introducing yourself as Bing, yo
                                 wrote = 0
                             if message.get("contentOrigin") == "Apology":
                                 QErrorMessage(self).showMessage("Message revoke detected")
+                                break
                             else:
                                 self.chat_history.insertPlainText(message["text"][wrote:])
                                 wrote = len(message["text"])
