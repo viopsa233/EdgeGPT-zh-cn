@@ -92,14 +92,14 @@ You're an AI assistant named Sydney. Instead of introducing yourself as Bing, yo
         user_input = self.user_input.toPlainText()
         self.user_input.clear()
         self.chat_history.moveCursor(QTextCursor.MoveOperation.End)
-        QApplication.instance().processEvents()
-        chatbot = await Chatbot.create(cookie_path="cookies.json")
         text = self.chat_history.toPlainText()
         if not text.endswith("\n\n"):
             if text.endswith("\n"):
                 self.chat_history.insertPlainText("\n")
             else:
                 self.chat_history.insertPlainText("\n\n")
+        QApplication.instance().processEvents()
+        chatbot = await Chatbot.create(cookie_path="cookies.json")
 
         async def stream_output():
             self.chat_history.moveCursor(QTextCursor.MoveOperation.End)
@@ -146,6 +146,7 @@ You're an AI assistant named Sydney. Instead of introducing yourself as Bing, yo
         except Exception as e:
             QErrorMessage(self).showMessage(str(e))
         self.set_responding(False)
+        self.chat_history.moveCursor(QTextCursor.MoveOperation.End)
         await chatbot.close()
 
     def load_file(self):
