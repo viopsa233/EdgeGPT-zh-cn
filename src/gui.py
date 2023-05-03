@@ -1,13 +1,14 @@
 import asyncio
 
-from PySide6.QtGui import QTextCursor, Qt
+from PySide6.QtGui import QTextCursor, Qt, QFont
 from PySide6.QtWidgets import (
     QApplication,
     QGridLayout,
     QLabel,
     QPushButton,
     QTextEdit,
-    QWidget, QPlainTextEdit, QErrorMessage, QHBoxLayout, QFileDialog, QToolButton, QMenu, QSizePolicy,
+    QWidget, QPlainTextEdit, QErrorMessage, QHBoxLayout, QFileDialog, QToolButton, QMenu, QSizePolicy, QVBoxLayout,
+    QSplitter,
 )
 from qasync import QEventLoop, asyncSlot
 
@@ -18,6 +19,7 @@ class UserInput(QPlainTextEdit):
     def __init__(self, parent):
         super().__init__(parent)
         self.parent = parent
+        self.setFont(QFont("Microsoft YaHei", 11))
 
     def keyPressEvent(self, event):
         key = event.key()
@@ -45,6 +47,7 @@ class SydneyWindow(QWidget):
         self.responding = False
         self.enter_mode = "Enter"
         self.chat_history = QTextEdit()
+        self.chat_history.setFontPointSize(11)
         self.user_input = UserInput(self)
         self.user_input.setSizePolicy(QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding))
         self.clear_button = QPushButton("Clear")
@@ -68,25 +71,38 @@ class SydneyWindow(QWidget):
         self.ctrl_enter_action.setCheckable(True)
         self.send_button.setMenu(menu)
 
-        layout = QGridLayout()
-        layout.addWidget(QLabel("Chat History:"), 0, 0)
-        hbox = QHBoxLayout()
-        hbox.addWidget(self.clear_button)
-        hbox.addWidget(self.load_button)
-        hbox.addWidget(self.save_button)
-        layout.addLayout(hbox, 0, 1)
-        layout.addWidget(self.chat_history, 1, 0, 1, 2)
-        layout.addWidget(QLabel("User Input:"), 2, 0)
-        layout.addWidget(self.user_input, 3, 0)
-        layout.addWidget(self.send_button, 3, 1)
+        upper_half = QWidget()
+        upper_half_layout = QVBoxLayout()
+        upper_half.setLayout(upper_half_layout)
+        upper_half_buttons = QHBoxLayout()
+        upper_half_layout.addLayout(upper_half_buttons)
+        upper_half_buttons.addWidget(QLabel("Chat History:"))
+        upper_half_buttons.addStretch()
+        upper_half_buttons.addWidget(self.clear_button)
+        upper_half_buttons.addWidget(self.load_button)
+        upper_half_buttons.addWidget(self.save_button)
+        upper_half_layout.addWidget(self.chat_history)
 
-        layout.setRowStretch(1, 2)
-        layout.setRowStretch(3, 1)
+        bottom_half = QWidget()
+        bottom_half_layout = QVBoxLayout()
+        bottom_half.setLayout(bottom_half_layout)
+        bottom_half_buttons = QHBoxLayout()
+        bottom_half_layout.addLayout(bottom_half_buttons)
+        bottom_half_buttons.addWidget(QLabel("User Input:"))
+        bottom_half_buttons.addStretch()
+        bottom_half_buttons.addWidget(self.send_button)
+        bottom_half_layout.addWidget(self.user_input)
+
+        self.splitter = QSplitter(Qt.Orientation.Vertical)
+        self.splitter.addWidget(upper_half)
+        self.splitter.addWidget(bottom_half)
+        layout = QVBoxLayout()
+        layout.addWidget(self.splitter)
+        layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
 
         self.send_button.clicked.connect(self.send_message)
         self.clear_context()
-        
 
     @asyncSlot()
     async def send_message(self):
@@ -102,7 +118,6 @@ class SydneyWindow(QWidget):
                 self.chat_history.insertPlainText("\n")
             else:
                 self.chat_history.insertPlainText("\n\n")
-        QApplication.instance().processEvents()
         chatbot = await Chatbot.create(cookie_path="cookies.json")
 
         async def stream_output():
