@@ -193,6 +193,7 @@ class _ChatHubRequest:
         conversation_style: CONVERSATION_STYLE_TYPE,
         options: list | None = None,
         webpage_context: str | None = None,
+        search_result: bool = False 
     ) -> None:
         """
         Updates request object
@@ -264,6 +265,9 @@ class _ChatHubRequest:
             "target": "chat",
             "type": 4,
         }
+        if search_result:
+            have_search_result = ["InternalSearchQuery","InternalSearchResult","InternalLoaderMessage","RenderCardRequest"]
+            self.struct["arguments"][0]["allowedMessageTypes"]+=have_search_result
         if webpage_context:
             self.struct["arguments"][0]["previousMessages"] = [
                 {
@@ -419,6 +423,7 @@ class _ChatHub:
         raw: bool = False,
         options: dict = None,
         webpage_context: str | None = None,
+        search_result : bool = False
     ) -> Generator[str, None, None]:
         """
         Ask a question to the bot
@@ -440,6 +445,7 @@ class _ChatHub:
                 conversation_style=conversation_style,
                 options=options,
                 webpage_context=webpage_context,
+                search_result=search_result
             )
         else:
             async with httpx.AsyncClient() as client:
@@ -477,6 +483,7 @@ class _ChatHub:
         final = False
         draw = False
         resp_txt = ""
+        result_text = ""
         resp_txt_no_link = ""
         while not final:
             objects = str(await self.wss.recv()).split(DELIMITER)
@@ -495,12 +502,19 @@ class _ChatHub:
                                 response["arguments"][0]["messages"][0]["contentOrigin"]
                                 != "Apology"
                             ):
-                                resp_txt = response["arguments"][0]["messages"][0][
+                                resp_txt = result_text+response["arguments"][0]["messages"][0][
                                     "adaptiveCards"
                                 ][0]["body"][0].get("text", "")
-                                resp_txt_no_link = response["arguments"][0]["messages"][
+                                resp_txt_no_link = result_text+response["arguments"][0]["messages"][
                                     0
                                 ].get("text", "")
+                                if(response["arguments"][0]["messages"][0].get("messageType")):
+                                    resp_txt = resp_txt+response["arguments"][0]["messages"][0][
+                                    "adaptiveCards"
+                                    ][0]["body"][0]["inlines"][0].get("text")+"\n"
+                                    result_text = result_text+response["arguments"][0]["messages"][0][
+                                    "adaptiveCards"
+                                    ][0]["body"][0]["inlines"][0].get("text")+"\n"
                         yield False, resp_txt
                     except Exception as exc:
                         print(exc)
@@ -617,6 +631,7 @@ class Chatbot:
         conversation_style: CONVERSATION_STYLE_TYPE = None,
         options: dict = None,
         webpage_context: str | None = None,
+        search_result: bool = False
     ) -> dict:
         """
         Ask a question to the bot
@@ -628,6 +643,7 @@ class Chatbot:
             options=options,
             cookies=self.cookies,
             webpage_context=webpage_context,
+            search_result=search_result
         ):
             if final:
                 return response
@@ -642,6 +658,7 @@ class Chatbot:
         raw: bool = False,
         options: dict = None,
         webpage_context: str | None = None,
+        search_result: str = False
     ) -> Generator[str, None, None]:
         """
         Ask a question to the bot
@@ -654,6 +671,7 @@ class Chatbot:
             options=options,
             cookies=self.cookies,
             webpage_context=webpage_context,
+            search_result=search_result
         ):
             yield response
 
