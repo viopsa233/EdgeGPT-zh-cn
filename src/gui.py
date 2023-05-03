@@ -128,7 +128,8 @@ class SydneyWindow(QWidget):
                     prompt=user_input,
                     raw=True,
                     webpage_context=self.chat_history.toPlainText(),
-                    conversation_style="creative"
+                    conversation_style="creative",
+                    search_result=True,
             ):
                 if not final and response["type"] == 1 and "messages" in response["arguments"][0]:
                     self.chat_history.moveCursor(QTextCursor.MoveOperation.End)

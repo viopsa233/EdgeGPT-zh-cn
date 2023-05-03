@@ -216,11 +216,7 @@ class _ChatHubRequest:
                     "optionsSets": options,
                     "allowedMessageTypes": [
                         "Chat",
-                        "InternalSearchQuery",
-                        "InternalSearchResult",
                         "Disengaged",
-                        "InternalLoaderMessage",
-                        "RenderCardRequest",
                         "AdsQuery",
                         "SemanticSerp",
                         "GenerateContentQuery",
