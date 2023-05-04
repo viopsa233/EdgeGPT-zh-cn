@@ -3,10 +3,8 @@ import asyncio
 from PySide6.QtGui import QTextCursor, Qt, QFont
 from PySide6.QtWidgets import (
     QApplication,
-    QGridLayout,
     QLabel,
     QPushButton,
-    QTextEdit,
     QWidget, QPlainTextEdit, QErrorMessage, QHBoxLayout, QFileDialog, QToolButton, QMenu, QSizePolicy, QVBoxLayout,
     QSplitter,
 )
@@ -46,8 +44,8 @@ class SydneyWindow(QWidget):
         super().__init__(parent)
         self.responding = False
         self.enter_mode = "Enter"
-        self.chat_history = QTextEdit()
-        self.chat_history.setFontPointSize(11)
+        self.chat_history = QPlainTextEdit()
+        self.chat_history.setFont(QFont("Microsoft YaHei", 11))
         self.user_input = UserInput(self)
         self.user_input.setSizePolicy(QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding))
         self.clear_button = QPushButton("Clear")
