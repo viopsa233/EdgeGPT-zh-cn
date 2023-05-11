@@ -3,8 +3,10 @@ import asyncio
 from PySide6.QtGui import QTextCursor, Qt, QFont
 from PySide6.QtWidgets import (
     QApplication,
+    QGridLayout,
     QLabel,
     QPushButton,
+    QTextEdit,
     QWidget, QPlainTextEdit, QErrorMessage, QHBoxLayout, QFileDialog, QToolButton, QMenu, QSizePolicy, QVBoxLayout,
     QSplitter,
 )
@@ -44,21 +46,21 @@ class SydneyWindow(QWidget):
         super().__init__(parent)
         self.responding = False
         self.enter_mode = "Enter"
-        self.chat_history = QPlainTextEdit()
-        self.chat_history.setFont(QFont("Microsoft YaHei", 11))
+        self.chat_history = QTextEdit()
+        self.chat_history.setFontPointSize(11)
         self.user_input = UserInput(self)
         self.user_input.setSizePolicy(QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding))
-        self.clear_button = QPushButton("Clear")
+        self.clear_button = QPushButton("清除")
         self.clear_button.clicked.connect(self.clear_context)
-        self.load_button = QPushButton("Load")
+        self.load_button = QPushButton("加载")
         self.load_button.clicked.connect(self.load_file)
-        self.save_button = QPushButton("Save")
+        self.save_button = QPushButton("保存")
         self.save_button.clicked.connect(self.save_file)
         self.clear_button.setFixedWidth(40)
         self.load_button.setFixedWidth(40)
         self.save_button.setFixedWidth(40)
         self.send_button = QToolButton()
-        self.send_button.setText("Send")
+        self.send_button.setText("发送")
         self.send_button.setSizePolicy(QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum))
         self.send_button.setPopupMode(QToolButton.ToolButtonPopupMode.MenuButtonPopup)
         menu = QMenu(self)
@@ -74,7 +76,7 @@ class SydneyWindow(QWidget):
         upper_half.setLayout(upper_half_layout)
         upper_half_buttons = QHBoxLayout()
         upper_half_layout.addLayout(upper_half_buttons)
-        upper_half_buttons.addWidget(QLabel("Chat History:"))
+        upper_half_buttons.addWidget(QLabel("聊天记录:"))
         upper_half_buttons.addStretch()
         upper_half_buttons.addWidget(self.clear_button)
         upper_half_buttons.addWidget(self.load_button)
@@ -86,7 +88,7 @@ class SydneyWindow(QWidget):
         bottom_half.setLayout(bottom_half_layout)
         bottom_half_buttons = QHBoxLayout()
         bottom_half_layout.addLayout(bottom_half_buttons)
-        bottom_half_buttons.addWidget(QLabel("User Input:"))
+        bottom_half_buttons.addWidget(QLabel("用户输入:"))
         bottom_half_buttons.addStretch()
         bottom_half_buttons.addWidget(self.send_button)
         bottom_half_layout.addWidget(self.user_input)
@@ -144,20 +146,13 @@ class SydneyWindow(QWidget):
                                 self.chat_history.insertPlainText("[assistant](#message)\n")
                                 wrote = 0
                             if message.get("contentOrigin") == "Apology":
-                                QErrorMessage(self).showMessage("Message revoke detected")
+                                QErrorMessage(self).showMessage("消息被删除")
                                 break
                             else:
                                 self.chat_history.insertPlainText(message["text"][wrote:])
                                 wrote = len(message["text"])
-                                if "suggestedResponses" in message:
-                                    suggested_responses = list(map(lambda x: x["text"], message["suggestedResponses"]))
-                                    self.chat_history.insertPlainText(f"""\n[assistant](#suggestions)
-```json
-{{"suggestedUserResponses": {suggested_responses}}}
-```\n\n""")
-                                    break
                 if final and not response["item"]["messages"][-1].get("text"):
-                    raise Exception("Looks like the user message has triggered the Bing filter")
+                    raise Exception("看起来用户消息已触发Bing安全机制")
 
         try:
             await stream_output()
